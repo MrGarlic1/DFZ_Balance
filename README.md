@@ -1,4 +1,4 @@
-# DFZ_Balance by Mr.Garlic (Last updated: 7/6/2020) 
+# DFZ_Balance (Last updated: 7/6/2020) 
 
 Balances DFZ lobbies based on player's roles and tiers.
 
