@@ -96,6 +96,8 @@ def get_player_info(mention_list):
         To-Do: Grab roles based on reactions to the signup message
         '''
 
+    return players  # Returns list of PlayerInfo objects
+
 
 def balance_lobby(players):
     def sum_tiers(teams):
