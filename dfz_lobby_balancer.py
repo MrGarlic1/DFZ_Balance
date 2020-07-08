@@ -75,7 +75,7 @@ def get_player_info(mention_list):
 
     for i in mention_list:
         # Adds player's name
-        players.append(PlayerInfo)
+        players.append(PlayerInfo())
         players.name = i
 
         # Grabs user object, adds the player's tier
@@ -100,7 +100,7 @@ def get_player_info(mention_list):
 
 
 def balance_lobby(players):
-    def sum_tiers(teams):
+    def sum_tiers(teams):  # Collects sum of tiers on each team for balancing purposes
         total_radiant, total_dire = 0, 0
         for a in range(5):
             total_radiant += teams.radiant[a].tier
@@ -115,74 +115,35 @@ def balance_lobby(players):
             lobby_players.append(players[0:10])
             del players[0:10]
         else:
-            lobby_players.append(players[0:-1])
-            del players[0:-1]
-            lobby_players[-1].append(players[0])
-            del players[0]
+            lobby_players.append(players[:])
+            del players[:]
+        print(players)
         out_games.append(PlayerLobby())
     del players
-
-    '''
-    To-Do: Make this shit less confusing
-    '''
     for h in range(len(out_games)):  # For each lobby it will balance
         out_games[h].lobby_num = h + 1
         i = 0
-        while i < len(lobby_players[h]):
-            if len(lobby_players[h][i].roles) == 1:  # Assigns players with 1 role selected
-                for j in range(5):
-                    if j + 1 in lobby_players[h][i].roles:
-                        if out_games[h].radiant[j].is_empty():
-                            out_games[h].radiant[j] = lobby_players[h][i]
-                            del lobby_players[h][i]
-                            i -= 1
-                            break
-                        elif (out_games[h].dire[j].is_empty() and
-                              out_games[h].radiant[j].tier == lobby_players[h][i].tier):
-                            out_games[h].dire[j] = lobby_players[h][i]
-                            del lobby_players[h][i]
-                            i -= 1
-                            break
-            i += 1
+
+        for max_roles in [1, 3, 5]:
+            while i < len(lobby_players[h]):
+                if len(lobby_players[h][i].roles) <= max_roles:  # Assigns players with <=1, then <=3, then <=5 roles selected
+                    for j in range(5):
+                        if j + 1 in lobby_players[h][i].roles:
+                            if out_games[h].radiant[j].is_empty():
+                                out_games[h].radiant[j] = lobby_players[h][i]
+                                del lobby_players[h][i]
+                                i -= 1
+                                break
+                            elif (out_games[h].dire[j].is_empty() and
+                                    out_games[h].radiant[j].tier == lobby_players[h][i].tier):
+                                out_games[h].dire[j] = lobby_players[h][i]
+                                del lobby_players[h][i]
+                                i -= 1
+                                break
+                i += 1
 
         i = 0
-        while i < len(lobby_players[h]):
-            if len(lobby_players[h][i].roles) <= 3:  # Assigns players with 2-3 roles selected
-                for j in range(5):
-                    if j + 1 in lobby_players[h][i].roles:
-                        if out_games[h].radiant[j].is_empty():
-                            out_games[h].radiant[j] = lobby_players[h][i]
-                            del lobby_players[h][i]
-                            i -= 1
-                            break
-                        elif (out_games[h].dire[j].is_empty() and
-                              out_games[h].radiant[j].tier == lobby_players[h][i].tier):
-                            out_games[h].dire[j] = lobby_players[h][i]
-                            del lobby_players[h][i]
-                            i -= 1
-                            break
-            i += 1
-
-        i = 0
-        while i < len(lobby_players[h]):
-            if len(lobby_players[h][i].roles) > 3:  # Assigns players with 4-5 roles selected
-                for j in range(5):
-                    if j + 1 in lobby_players[h][i].roles:
-                        if out_games[h].radiant[j].is_empty():
-                            out_games[h].radiant[j] = lobby_players[h][i]
-                            del lobby_players[h][i]
-                            i -= 1
-                            break
-                        elif (out_games[h].dire[j].is_empty() and
-                              out_games[h].radiant[j].tier == lobby_players[h][i].tier):
-                            out_games[h].dire[j] = lobby_players[h][i]
-                            del lobby_players[h][i]
-                            i -= 1
-                            break
-            i += 1
-
-        i = 0
-        while i < len(lobby_players[h]):  # Assigns remaining players, ignoring tier
+        while i < len(lobby_players[h]):  # Assigns players, ignoring tier
             for j in range(5):
                 if j + 1 in lobby_players[h][i].roles:
                     if out_games[h].radiant[j].is_empty():
@@ -198,7 +159,7 @@ def balance_lobby(players):
             i += 1
 
         i = 0
-        while i < len(lobby_players[h]):  # Assigns remaining players, ignoring tier and roles
+        while i < len(lobby_players[h]):  # Assigns players, ignoring tier and roles
             for j in range(5):
                 if out_games[h].radiant[j].is_empty():
                     out_games[h].radiant[j] = lobby_players[h][i]
@@ -211,12 +172,11 @@ def balance_lobby(players):
                     i -= 1
                     break
             i += 1
-        del i
 
         radiant_tier, dire_tier, = sum_tiers(out_games[h])
-        iters = 0
+        i = 0
         while abs(radiant_tier - dire_tier) > 1:  # If one team is overall stronger
-            if iters > 4:  # Fail-safe
+            if i > 4:  # Fail-safe
                 break
             if radiant_tier > dire_tier:
                 for i in range(5):
@@ -227,7 +187,7 @@ def balance_lobby(players):
                         out_games[h].dire[i] = temp
                         del temp
                         break
-            else:
+            elif dire_tier > radiant_tier:
                 for i in range(5):
                     # If radiant tier is higher, swap teams for that role
                     if out_games[h].dire[i].tier > out_games[h].radiant[i].tier:
@@ -237,9 +197,9 @@ def balance_lobby(players):
                         del temp
                         break
             radiant_tier, dire_tier, = sum_tiers(out_games[h])
-            iters += 1
+            i += 1
 
-    return out_games  # Returns a list of PlayerLobby objects
+    return out_games  # Returns list of lobby objects
 
 
 '''
